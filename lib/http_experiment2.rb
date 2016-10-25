@@ -3,9 +3,12 @@ require 'socket'
 
 tcp_server = TCPServer.new(9292)
 
+to_close = false
 puts "Up and running"
-loop do
+
   client = tcp_server.accept
+while !to_close do
+  puts "Still Ready for a request"
   request_lines = []
   while line = client.gets and !line.chomp.empty?
     to_close = true if line.include?("close")
@@ -24,7 +27,7 @@ loop do
             "content-length: #{output.length}\r\n\r\n"].join("\r\n")
   client.puts headers
   client.puts output
-  puts ["Wrote this response:", headers, output].join("\n")
 end
+puts ["Wrote this response:", headers, output].join("\n")
 client.close
 puts "\nResponse complete, exiting."

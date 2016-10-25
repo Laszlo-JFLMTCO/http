@@ -34,8 +34,11 @@ class HTTPTest < Minitest::Test
     test_one_tcp_line = "GET / HTTP/1.1"
     test_http.build_http_header(test_one_tcp_line)
     assert_equal "GET", test_http.header_clean["Verb"]
+    assert_equal "GET", test_http.received("verb")
     assert_equal "/", test_http.header_clean["Path"]
+    assert_equal "/", test_http.received("path")
     assert_equal "HTTP/1.1", test_http.header_clean["Protocol"]
+    assert_equal "HTTP/1.1", test_http.received("protocol")
   end
 
   def test_header_host_port_identified
@@ -45,7 +48,9 @@ class HTTPTest < Minitest::Test
     test_one_tcp_line = "Host: localhost:9292\r\n"
     test_http.build_http_header(test_one_tcp_line)
     assert_equal "localhost", test_http.header_clean["Host"]
+    assert_equal "localhost", test_http.received("host")
     assert_equal "9292", test_http.header_clean["Port"]
+    assert_equal "9292", test_http.received("port")
   end
 
   def test_divide_by_space
