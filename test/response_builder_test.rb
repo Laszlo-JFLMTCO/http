@@ -14,4 +14,8 @@ class TestResponseBoulder < Minitest::Test
   def test_pre_wrapper
     assert_equal "<pre>Hello World!</pre>", ResponseBuilder.new.pre_wrapper("Hello World!")
   end
+
+  def test_current_date_time
+    assert_equal "", ResponseBuilder.new.current_date_time
+  end
 end

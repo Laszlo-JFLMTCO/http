@@ -7,20 +7,19 @@ response_builder = ResponseBuilder.new
 
 stop_listening = false
 puts "Server is listening..."
-request_counter = 0
+all_request_counter = 0
 
 while !stop_listening do
   client = tcp_server.accept
-  puts "Received #{request_counter} HTTP requests since started..."
+  puts "Received #{all_request_counter} HTTP requests since started..."
   request_raw = []
   while line = client.gets and !line.chomp.empty?
-    stop_listening = true if line.include?("close")
     request_raw << line
   end
   response_builder.build_http_header(request_raw)
-  # response = "<pre>" + "Hello World! (#{request_counter})\n" + "</pre>"
-  response = response_builder.output
+  response = response_builder.output(all_request_counter)
   output = "<html><head></head><body>#{response}</body></html>"
+  stop_listening = true if output.include?("Total Requests")
   headers = ["http/1.1 200 ok",
             "date: #{Time.now.strftime('%a, %e %b %Y %H:%M:%S %z')}",
             "server: ruby",
@@ -29,7 +28,7 @@ while !stop_listening do
 
   client.puts headers
   client.puts output
-  request_counter += 1
+  all_request_counter += 1
   client.close
 end
 
