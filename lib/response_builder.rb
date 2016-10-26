@@ -98,9 +98,11 @@ class ResponseBuilder
   end
 
   def parameter_parser(parameters)
-    parameter_value
+    parameter_list = {}
     splitting(parameters, "&").each do |pair|
+      parameter_list[splitting(pair, "=").first] = splitting(pair, "=").last
     end
+    parameter_list
   end
 
   def found_in_dictionary?(dictionary_content, word)
@@ -110,8 +112,9 @@ class ResponseBuilder
   def word_search
     return if post?
     dictionary_content = read("/usr/share/dict/words")
-    parameter = splitting(parameters, "=").first
-    value = splitting(parameters, "=").last
+    parameter_list = parameter_parser(parameters)
+    parameter = "word"
+    value = parameter_list[parameter]
     return "#{value.upcase} is not a known word" if !found_in_dictionary?(dictionary_content, value)
     return "#{value.upcase} is a known word"
   end
@@ -158,11 +161,6 @@ class ResponseBuilder
   def header
     build_response_header
     response_header.join("\r\n")
-    # ["http/1.1 200 ok",
-    # "date: #{Time.now.strftime('%a, %e %b %Y %H:%M:%S %z')}",
-    # "server: ruby",
-    # "content-type: text/html; charset=iso-8859-1",
-    # "content-length: #{body.length}\r\n\r\n"].join("\r\n")
   end
 
   def body
@@ -170,10 +168,10 @@ class ResponseBuilder
   end
 
   def output(webserver_request_raw, webserver_counter, post_data)
-    # build_http_header(webserver_request_raw)
     clean_status_code
     @all_request_counter = webserver_counter
     @post_data = post_data
+    binding.pry
     @body_raw = build_response(http.received("path"))
   end
 
