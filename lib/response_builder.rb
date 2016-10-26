@@ -5,21 +5,36 @@ class ResponseBuilder
   attr_reader :path_processors,
               :http,
               :hello_counter,
-              :all_request_counter
+              :all_request_counter,
+              :parameters
 
   def initialize
     @path_processors = {"/"=>"diagnostics_report",
                         "/hello"=>"say_hello",
                         "/datetime"=>"date_time",
-                        "/shutdown"=>"shutdown_server"}
+                        "/shutdown"=>"shutdown_server",
+                        "/word_search"=>"word_search"}
     @http = Http.new
     @hello_counter = 0
   end
 
+  def path_command(request_path)
+    splitting(request_path, "?").first
+  end
+
+  def path_parameters(request_path)
+    splitting(request_path, "?").last
+  end
+
+  def is_valid?(command)
+    path_processors.keys.include?(command)
+  end
+
   def build_response(request_path)
-    return pre_wrapper("Not supported path") if !path_processors.keys.include?(request_path)
-    parameters = splitting(request_path, "/").last
-    response = self.send(path_processors[request_path])
+    command = path_command(request_path)
+    @parameters = path_parameters(request_path)
+    return pre_wrapper("Not supported path") if !is_valid?(command)
+    response = self.send(path_processors[command])
     pre_wrapper(response)
   end
 
@@ -50,6 +65,25 @@ class ResponseBuilder
 
   def shutdown_server
     response = "Total Requests: #{all_request_counter}"
+  end
+
+  def parameter_parser(parameters)
+    parameter_value
+    splitting(parameters, "&").each do |pair|
+    end
+  end
+
+  def found_in_dictionary?(dictionary_content, word)
+    dictionary_content.one? {|one_line| one_line == word}
+  end
+
+  def word_search
+    dictionary_source = "./test/small_dictionary.txt"
+    dictionary_content = read(dictionary_source)
+    parameter = splitting(parameters, "=").first
+    value = splitting(parameters, "=").last
+    return "#{value.upcase} is a known word" if found_in_dictionary?(dictionary_content, value)
+    return "#{value.upcase} is not a known word" if !found_in_dictionary?(dictionary_content, value)
   end
 
   def output(webserver_counter)

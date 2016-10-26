@@ -2,7 +2,6 @@ require 'socket'
 require_relative 'response_builder'
 
 tcp_server = TCPServer.new(9292)
-# http_request = Http.new
 response_builder = ResponseBuilder.new
 
 stop_listening = false

@@ -7,6 +7,7 @@ class TestResponseBoulder < Minitest::Test
   end
 
   def test_path_processors_list
+    #This test is only to support debugging
     skip
     assert_equal({}, ResponseBuilder.new.path_processors)
   end
@@ -16,6 +17,17 @@ class TestResponseBoulder < Minitest::Test
   end
 
   def test_current_date_time
+    #This test is only to support debugging
+    skip
     assert_equal "", ResponseBuilder.new.current_date_time
   end
+
+  def test_path_command_returns_command_portion_from_http_request_path
+    assert_equal "/path", ResponseBuilder.new.path_command("/path?param=value&param2=value2")
+  end
+
+  def test_path_command_returns_parameters_portion_from_http_request_path
+    assert_equal "param=value&param2=value2", ResponseBuilder.new.path_parameters("/path?param=value&param2=value2")
+  end
+
 end
