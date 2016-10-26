@@ -130,7 +130,12 @@ class ResponseBuilder
   end
 
   def start_guessing_game
-    game.start if post?
+    if post? and !game.started
+      @status_code = "301"
+      game.start
+    elsif post? and game.started
+      @status_code = "403"
+    end
   end
 
   def evaluate_guess

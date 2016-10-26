@@ -38,7 +38,7 @@ class GuessingGame
   end
 
   def guess_evaluation(target, guess)
-    # return "Correct" if target == guess
+    return "A new game hasn't been started yet. Send /start_game POST request.'" if !started
     return "Too Low" if target > guess
     return "Too High" if target < guess
     @started = false
@@ -46,7 +46,7 @@ class GuessingGame
   end
 
   def guess(number)
-    @guess_log[number] = guess_evaluation(mystery_number, number)
+    @guess_log[number] = guess_evaluation(mystery_number, number) if started
   end
 
   def guess_log_entry(number)
@@ -55,7 +55,7 @@ class GuessingGame
 
   def last_guess
     return "No guesses yet..." if guess_log.keys.last.nil?
-    "#{guess_log.keys.count} guess(es) until now.\n Most recent guess was number #{guess_log.keys.last} => It was " + guess_log_entry(guess_log.keys.last)
+    "#{guess_log.keys.count} guess(es) until now.\nMost recent guess was number #{guess_log.keys.last} => It was " + guess_log_entry(guess_log.keys.last)
   end
 
 end
