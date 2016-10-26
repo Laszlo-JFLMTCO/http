@@ -38,9 +38,11 @@ class GuessingGame
   end
 
   def guess_evaluation(target, guess)
-    return "Correct" if target == guess
+    # return "Correct" if target == guess
     return "Too Low" if target > guess
     return "Too High" if target < guess
+    @started = false
+    "Correct"
   end
 
   def guess(number)

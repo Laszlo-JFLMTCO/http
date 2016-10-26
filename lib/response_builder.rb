@@ -51,6 +51,7 @@ class ResponseBuilder
   def build_response(request_path)
     command = path_command(request_path)
     @parameters = path_parameters(request_path)
+    @post_parameters = post_parameter_parser if post?
     return pre_wrapper(diagnostics_report_raw) if !is_valid?(command)
     response = self.send(path_processors[command])
     pre_wrapper(response)
@@ -97,6 +98,10 @@ class ResponseBuilder
     "Total Requests: #{all_request_counter}"
   end
 
+  def post_parameter_parser
+    post_parameter_clean = sanitize_post_parameters(@post_data) if !@post_data.empty?
+  end
+
   def parameter_parser(parameters)
     parameter_list = {}
     splitting(parameters, "&").each do |pair|
@@ -129,7 +134,8 @@ class ResponseBuilder
   end
 
   def evaluate_guess
-    game.guess(50)
+    post_parameter_parser
+    game.guess(@post_parameters["guess"].to_i)
     @status_code = "302"
     @new_url = "http://localhost:9292/game"
   end
@@ -171,7 +177,6 @@ class ResponseBuilder
     clean_status_code
     @all_request_counter = webserver_counter
     @post_data = post_data
-    binding.pry
     @body_raw = build_response(http.received("path"))
   end
 

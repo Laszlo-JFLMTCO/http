@@ -58,7 +58,7 @@ class Http
   end
 
   def received(detail)
-    header_clean[detail.capitalize]
+    header_clean[capitalize(detail)]
   end
 
   def diagnostics_report
