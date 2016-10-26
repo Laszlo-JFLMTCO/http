@@ -15,18 +15,11 @@ while !stop_listening do
   while line = client.gets and !line.chomp.empty?
     request_raw << line
   end
-  response_builder.build_http_header(request_raw)
-  response = response_builder.output(all_request_counter)
-  output = "<html><head></head><body>#{response}</body></html>"
-  stop_listening = true if output.include?("Total Requests")
-  headers = ["http/1.1 200 ok",
-            "date: #{Time.now.strftime('%a, %e %b %Y %H:%M:%S %z')}",
-            "server: ruby",
-            "content-type: text/html; charset=iso-8859-1",
-            "content-length: #{output.length}\r\n\r\n"].join("\r\n")
+  response_builder.output(request_raw, all_request_counter)
+  stop_listening = true if response_builder.body.include?("Total Requests")
 
-  client.puts headers
-  client.puts output
+  client.puts response_builder.header
+  client.puts response_builder.body
   all_request_counter += 1
   client.close
 end

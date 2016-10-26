@@ -62,14 +62,11 @@ class Http
   end
 
   def diagnostics_report
-    report = ""
     report_list = []
     @header_clean.keys.each do |item|
       report_list << "#{item}: " + @header_clean[item]
     end
-    report += report_list.join("\n")
-    # report += "</pre>"
-    return report
+    report_list.join("\n")
   end
 
   def diagnostics_report_raw

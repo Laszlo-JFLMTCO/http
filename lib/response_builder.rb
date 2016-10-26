@@ -6,7 +6,8 @@ class ResponseBuilder
               :http,
               :hello_counter,
               :all_request_counter,
-              :parameters
+              :parameters,
+              :body_raw
 
   def initialize
     @path_processors = {"/"=>"diagnostics_report",
@@ -16,6 +17,7 @@ class ResponseBuilder
                         "/word_search"=>"word_search"}
     @http = Http.new
     @hello_counter = 0
+    @body_raw = ""
   end
 
   def path_command(request_path)
@@ -90,9 +92,22 @@ class ResponseBuilder
     return "#{value.upcase} is not a known word" if !found_in_dictionary?(dictionary_content, value)
   end
 
-  def output(webserver_counter)
+  def header
+    ["http/1.1 200 ok",
+    "date: #{Time.now.strftime('%a, %e %b %Y %H:%M:%S %z')}",
+    "server: ruby",
+    "content-type: text/html; charset=iso-8859-1",
+    "content-length: #{body.length}\r\n\r\n"].join("\r\n")
+  end
+
+  def body
+    "<html><head></head><body>#{body_raw}</body></html>"
+  end
+
+  def output(webserver_request_raw, webserver_counter)
+    build_http_header(webserver_request_raw)
     @all_request_counter = webserver_counter
-    build_response(http.received("path"))
+    @body_raw = build_response(http.received("path"))
   end
 
 end
