@@ -33,7 +33,7 @@ class ResponseBuilder
   def build_response(request_path)
     command = path_command(request_path)
     @parameters = path_parameters(request_path)
-    return pre_wrapper("Not supported path") if !is_valid?(command)
+    return pre_wrapper(diagnostics_report_raw) if !is_valid?(command)
     response = self.send(path_processors[command])
     pre_wrapper(response)
   end
@@ -48,6 +48,10 @@ class ResponseBuilder
 
   def diagnostics_report
     http.diagnostics_report
+  end
+
+  def diagnostics_report_raw
+    http.diagnostics_report_raw
   end
 
   def say_hello
