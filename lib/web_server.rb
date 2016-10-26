@@ -15,7 +15,11 @@ while !stop_listening do
   while line = client.gets and !line.chomp.empty?
     request_raw << line
   end
-  response_builder.output(request_raw, all_request_counter)
+  response_builder.build_http_header(request_raw)
+  if !response_builder.post_content_length.nil?
+    post_data = client.readpartial(response_builder.post_content_length)
+  end
+  response_builder.output(request_raw, all_request_counter, post_data)
   stop_listening = true if response_builder.body.include?("Total Requests")
 
   client.puts response_builder.header

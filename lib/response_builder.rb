@@ -1,5 +1,6 @@
 require_relative 'support'
 require_relative 'http'
+require_relative 'guessing_game'
 
 class ResponseBuilder
   attr_reader :path_processors,
@@ -7,17 +8,32 @@ class ResponseBuilder
               :hello_counter,
               :all_request_counter,
               :parameters,
-              :body_raw
+              :body_raw,
+              :game,
+              :response_header,
+              :response_codes
 
   def initialize
     @path_processors = {"/"=>"diagnostics_report",
                         "/hello"=>"say_hello",
                         "/datetime"=>"date_time",
                         "/shutdown"=>"shutdown_server",
-                        "/word_search"=>"word_search"}
+                        "/word_search"=>"word_search",
+                        "/start_game"=>"start_guessing_game",
+                        "/game"=>"guessing_game"}
+    @response_codes = {"200"=>"OK",
+                        "301"=>"Moved Permanently",
+                        "302"=>"Temporary Redicrect",
+                        "401"=>"Unauthorized",
+                        "403"=>"Forbidden",
+                        "404"=>"Not Found",
+                        "500"=>"Internal Server Error"}
     @http = Http.new
     @hello_counter = 0
     @body_raw = ""
+    @game = GuessingGame.new
+    clean_response_header
+    clean_status_code
   end
 
   def path_command(request_path)
@@ -48,6 +64,14 @@ class ResponseBuilder
     "<pre>" + response + "</pre>"
   end
 
+  def get?
+    http.received("verb") == "GET"
+  end
+
+  def post?
+    http.received("verb") == "POST"
+  end
+
   def diagnostics_report
     http.diagnostics_report
   end
@@ -58,7 +82,7 @@ class ResponseBuilder
 
   def say_hello
     @hello_counter += 1
-    response = "Hello World! (#{hello_counter})"
+    "Hello World! (#{hello_counter})"
   end
 
   def current_date_time
@@ -66,11 +90,11 @@ class ResponseBuilder
   end
 
   def date_time
-    response = "#{current_date_time}"
+    "#{current_date_time}"
   end
 
   def shutdown_server
-    response = "Total Requests: #{all_request_counter}"
+    "Total Requests: #{all_request_counter}"
   end
 
   def parameter_parser(parameters)
@@ -84,29 +108,72 @@ class ResponseBuilder
   end
 
   def word_search
-    dictionary_source = "./test/small_dictionary.txt"
-    dictionary_content = read(dictionary_source)
+    return if post?
+    dictionary_content = read("/usr/share/dict/words")
     parameter = splitting(parameters, "=").first
     value = splitting(parameters, "=").last
-    return "#{value.upcase} is a known word" if found_in_dictionary?(dictionary_content, value)
     return "#{value.upcase} is not a known word" if !found_in_dictionary?(dictionary_content, value)
+    return "#{value.upcase} is a known word"
+  end
+
+  def post_content_length
+    return nil if !post?
+    http.received("Content-Length").to_i
+  end
+
+  def start_guessing_game
+    game.start if post?
+  end
+
+  def evaluate_guess
+    game.guess(50)
+    @status_code = "302"
+    @new_url = "http://localhost:9292/game"
+  end
+
+  def guessing_game
+    return game.last_guess if get?
+    evaluate_guess if post?
+  end
+
+  def clean_response_header
+    @response_header = []
+  end
+
+  def clean_status_code
+    @status_code = "200"
+    @new_url = nil
+  end
+
+  def build_response_header
+    clean_response_header
+    @response_header << "http/1.1 " + @status_code + " " + response_codes[@status_code]
+    @response_header << "Location: " + @new_url if @status_code == "302"
+    @response_header << "date: #{Time.now.strftime('%a, %e %b %Y %H:%M:%S %z')}"
+    @response_header << "server: ruby"
+    @response_header << "content-type: text/html; charset=iso-8859-1"
+    @response_header << "content-length: #{body.length}\r\n\r\n"  
   end
 
   def header
-    ["http/1.1 200 ok",
-    "date: #{Time.now.strftime('%a, %e %b %Y %H:%M:%S %z')}",
-    "server: ruby",
-    "content-type: text/html; charset=iso-8859-1",
-    "content-length: #{body.length}\r\n\r\n"].join("\r\n")
+    build_response_header
+    response_header.join("\r\n")
+    # ["http/1.1 200 ok",
+    # "date: #{Time.now.strftime('%a, %e %b %Y %H:%M:%S %z')}",
+    # "server: ruby",
+    # "content-type: text/html; charset=iso-8859-1",
+    # "content-length: #{body.length}\r\n\r\n"].join("\r\n")
   end
 
   def body
     "<html><head></head><body>#{body_raw}</body></html>"
   end
 
-  def output(webserver_request_raw, webserver_counter)
-    build_http_header(webserver_request_raw)
+  def output(webserver_request_raw, webserver_counter, post_data)
+    # build_http_header(webserver_request_raw)
+    clean_status_code
     @all_request_counter = webserver_counter
+    @post_data = post_data
     @body_raw = build_response(http.received("path"))
   end
 
