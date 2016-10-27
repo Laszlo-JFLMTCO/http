@@ -1,10 +1,10 @@
 require 'minitest/autorun'
-require './lib/http'
+require './lib/http_header'
 require './lib/support'
 
 class HTTPTest < Minitest::Test
   def test_initialize
-    assert Http.new
+    assert HttpHeader.new
   end
 
   def test_sanitizer
@@ -12,7 +12,7 @@ class HTTPTest < Minitest::Test
   end
 
   def test_header_verb_path_protocol_identified
-    test_http = Http.new
+    test_http = HttpHeader.new
     test_tcp_request_raw = ["GET / HTTP/1.1\r\n",
                             "Host: localhost:9292\r\n",
                             "Connection: keep-alive\r\n",
@@ -31,7 +31,7 @@ class HTTPTest < Minitest::Test
   end
 
   def test_header_host_port_identified
-    test_http = Http.new
+    test_http = HttpHeader.new
     test_tcp_request_raw = ["GET / HTTP/1.1\r\n",
                             "Host: localhost:9292\r\n",
                             "Connection: keep-alive\r\n",

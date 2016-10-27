@@ -19,7 +19,7 @@ while !stop_listening do
   if !response_builder.post_content_length.nil?
     post_data = client.readpartial(response_builder.post_content_length)
   end
-  response_builder.output(request_raw, all_request_counter, post_data)
+  response_builder.output(all_request_counter, post_data)
   stop_listening = true if response_builder.body.include?("Total Requests")
 
   client.puts response_builder.header

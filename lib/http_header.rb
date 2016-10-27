@@ -1,7 +1,7 @@
 require 'pry'
 require_relative 'support'
 
-class Http
+class HttpHeader
 
   attr_reader :header,
               :header_clean,

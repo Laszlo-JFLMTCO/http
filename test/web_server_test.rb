@@ -24,10 +24,10 @@ class TestServer < Minitest::Test
     assert_equal 404, response.status
   end
 
-  # def test_server_post_game_without_parameters_does_not_crash_server
-  #   response = Faraday.post("http://localhost:9292/game")
-  #   assert_equal 302, response.status
-  # end
+  def test_server_post_game_without_parameters_does_not_crash_server
+    response = Faraday.post("http://localhost:9292/game")
+    assert_equal 200, response.status
+  end
 
   # def test_server_post_game_redirects
   #   conn = Faraday.new("http://localhost:9292")
