@@ -57,7 +57,7 @@ class ResponseBuilder
     response = self.send(path_processors[command])
     pre_wrapper(response)
   end
-  
+
   def clean_response_header
     @response_header = []
   end
