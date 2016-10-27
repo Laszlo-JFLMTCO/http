@@ -1,7 +1,7 @@
 require 'minitest/autorun'
 require './lib/response_builder'
 
-class TestResponseBoulder < Minitest::Test
+class TestResponseBuilder < Minitest::Test
   def test_initializing
     assert ResponseBuilder.new
   end

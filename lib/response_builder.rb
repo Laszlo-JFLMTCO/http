@@ -52,7 +52,7 @@ class ResponseBuilder
     command = path_command(request_path)
     @parameters = path_parameters(request_path)
     @post_parameters = post_parameter_parser if post?
-    return pre_wrapper(diagnostics_report_raw) if !is_valid?(command)
+    return @status_code = "404" if !is_valid?(command)
     response = self.send(path_processors[command])
     pre_wrapper(response)
   end
@@ -62,7 +62,7 @@ class ResponseBuilder
   end
 
   def pre_wrapper(response)
-    "<pre>" + response + "</pre>"
+    "<pre>#{response}</pre>"
   end
 
   def get?
@@ -139,10 +139,13 @@ class ResponseBuilder
   end
 
   def evaluate_guess
+    @post_parameters = {}
     post_parameter_parser
-    game.guess(@post_parameters["guess"].to_i)
-    @status_code = "302"
-    @new_url = "http://localhost:9292/game"
+    if !@post_parameters.empty?
+      game.guess(@post_parameters["guess"].to_i)
+      @status_code = "302"
+      @new_url = "http://localhost:9292/game"
+    end
   end
 
   def guessing_game
@@ -161,8 +164,8 @@ class ResponseBuilder
 
   def build_response_header
     clean_response_header
-    @response_header << "http/1.1 " + @status_code + " " + response_codes[@status_code]
-    @response_header << "Location: " + @new_url if @status_code == "302"
+    @response_header << "http/1.1 #{@status_code} #{response_codes[@status_code]}"
+    @response_header << "Location: #{@new_url}" if @status_code == "302"
     @response_header << "date: #{Time.now.strftime('%a, %e %b %Y %H:%M:%S %z')}"
     @response_header << "server: ruby"
     @response_header << "content-type: text/html; charset=iso-8859-1"
