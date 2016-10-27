@@ -84,7 +84,6 @@ class ResponseBuilder
     http_header.build_http_header(input)
   end
 
-
   def get?
     http_header.received("verb") == "GET"
   end
