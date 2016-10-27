@@ -30,12 +30,26 @@ module Features
     dictionary_content.one? {|one_line| one_line == word}
   end
 
+  def simple_search(word)
+    return "#{value.upcase} is not a known word" if !found_in_dictionary?(word)
+    return "#{value.upcase} is a known word"
+  end
+
+  def detailed_search(word)
+    dictionary_content = read("/usr/share/dict/words")
+    word_found = found_in_dictionary(word)
+    return "#{value.upcase} is not a known word" if !word_found
+    possible_words = dictionary_content.find_all {|entry| entry.start_with?(word)}
+    "{\"word\":\"#{word}\",
+    \"is_word\":#{word_found},
+    \"possible_matches\":#{possible_words}}"
+  end
+
   def word_search
     return if post?
     return "Missing parameter" if parameter_list["word"].nil?
-    value = parameter_list["word"]
-    return "#{value.upcase} is not a known word" if !found_in_dictionary?(value)
-    return "#{value.upcase} is a known word"
+    return detailed_search(parameter_list["word"]) if http_header.received("HTTP-Accept").start_with?("application/json")
+    simple_search(parameter_list["word"])
   end
 
     def start_guessing_game
