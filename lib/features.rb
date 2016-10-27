@@ -31,14 +31,13 @@ module Features
   end
 
   def simple_search(word)
-    return "#{value.upcase} is not a known word" if !found_in_dictionary?(word)
-    return "#{value.upcase} is a known word"
+    return "#{word.upcase} is not a known word" if !found_in_dictionary?(word)
+    return "#{word.upcase} is a known word"
   end
 
   def detailed_search(word)
     dictionary_content = read("/usr/share/dict/words")
-    word_found = found_in_dictionary(word)
-    return "#{value.upcase} is not a known word" if !word_found
+    word_found = found_in_dictionary?(word)
     possible_words = dictionary_content.find_all {|entry| entry.start_with?(word)}
     "{\"word\":\"#{word}\",
     \"is_word\":#{word_found},
@@ -48,7 +47,7 @@ module Features
   def word_search
     return if post?
     return "Missing parameter" if parameter_list["word"].nil?
-    return detailed_search(parameter_list["word"]) if http_header.received("HTTP-Accept").start_with?("application/json")
+    return detailed_search(parameter_list["word"]) if http_header.received("Accept").start_with?("application/json")
     simple_search(parameter_list["word"])
   end
 
