@@ -8,8 +8,7 @@ class GuessingGame
 
   def initialize
     @started = false
-    clear_mystery_number
-    clear_guess_log
+    clear_everything
   end
 
   def clear_everything
@@ -32,13 +31,13 @@ class GuessingGame
 
   def start
     return if started
+    clear_everything
     pick_a_number(100)
     @started = true
     "Good Luck!"
   end
 
   def guess_evaluation(target, guess)
-    return "A new game hasn't been started yet. Send /start_game POST request.'" if !started
     return "Too Low" if target > guess
     return "Too High" if target < guess
     @started = false
@@ -46,7 +45,8 @@ class GuessingGame
   end
 
   def guess(number)
-    @guess_log[number] = "#{guess_evaluation(mystery_number, number)}" if started
+    return if !started
+    @guess_log[number] = "#{guess_evaluation(mystery_number, number)}"
   end
 
   def guess_log_entry(number)

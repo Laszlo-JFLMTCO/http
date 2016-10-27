@@ -20,7 +20,8 @@ class ResponseBuilder
                         "/shutdown"=>"shutdown_server",
                         "/word_search"=>"word_search",
                         "/start_game"=>"start_guessing_game",
-                        "/game"=>"guessing_game"}
+                        "/game"=>"guessing_game",
+                        "/force_error"=>"force_error"}
     @response_codes = {"200"=>"OK",
                         "301"=>"Moved Permanently",
                         "302"=>"Temporary Redicrect",
@@ -55,6 +56,41 @@ class ResponseBuilder
     return @status_code = "404" if !is_valid?(command)
     response = self.send(path_processors[command])
     pre_wrapper(response)
+  end
+  
+  def clean_response_header
+    @response_header = []
+  end
+
+  def clean_status_code
+    @status_code = "200"
+    @new_url = nil
+  end
+
+  def build_response_header
+    clean_response_header
+    @response_header << "http/1.1 #{@status_code} #{response_codes[@status_code]}"
+    @response_header << "Location: #{@new_url}" if @status_code == "302"
+    @response_header << "date: #{Time.now.strftime('%a, %e %b %Y %H:%M:%S %z')}"
+    @response_header << "server: ruby"
+    @response_header << "content-type: text/html; charset=iso-8859-1"
+    @response_header << "content-length: #{body.length}\r\n\r\n"  
+  end
+
+  def header
+    build_response_header
+    response_header.join("\r\n")
+  end
+
+  def body
+    "<html><head></head><body>#{body_raw}</body></html>"
+  end
+
+  def output(webserver_request_raw, webserver_counter, post_data)
+    clean_status_code
+    @all_request_counter = webserver_counter
+    @post_data = post_data
+    @body_raw = build_response(http.received("path"))
   end
 
   def build_http_header(input)
@@ -140,12 +176,12 @@ class ResponseBuilder
 
   def evaluate_guess
     @post_parameters = {}
-    post_parameter_parser
+    @post_parameters = post_parameter_parser
     if !@post_parameters.empty?
       game.guess(@post_parameters["guess"].to_i)
-      @status_code = "302"
-      @new_url = "http://localhost:9292/game"
     end
+    @status_code = "302"
+    @new_url = "http://localhost:9292/game"
   end
 
   def guessing_game
@@ -153,39 +189,14 @@ class ResponseBuilder
     evaluate_guess if post?
   end
 
-  def clean_response_header
-    @response_header = []
+  def force_error
+    @status_code = "500"
+    begin
+      raise "SystemError"
+      rescue => stack_trace
+    end
+    "#{stack_trace.backtrace.join("\n\t")}"
   end
 
-  def clean_status_code
-    @status_code = "200"
-    @new_url = nil
-  end
-
-  def build_response_header
-    clean_response_header
-    @response_header << "http/1.1 #{@status_code} #{response_codes[@status_code]}"
-    @response_header << "Location: #{@new_url}" if @status_code == "302"
-    @response_header << "date: #{Time.now.strftime('%a, %e %b %Y %H:%M:%S %z')}"
-    @response_header << "server: ruby"
-    @response_header << "content-type: text/html; charset=iso-8859-1"
-    @response_header << "content-length: #{body.length}\r\n\r\n"  
-  end
-
-  def header
-    build_response_header
-    response_header.join("\r\n")
-  end
-
-  def body
-    "<html><head></head><body>#{body_raw}</body></html>"
-  end
-
-  def output(webserver_request_raw, webserver_counter, post_data)
-    clean_status_code
-    @all_request_counter = webserver_counter
-    @post_data = post_data
-    @body_raw = build_response(http.received("path"))
-  end
 
 end
