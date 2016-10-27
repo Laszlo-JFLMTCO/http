@@ -2,9 +2,11 @@ require_relative 'support'
 require_relative 'http_header'
 require_relative 'guessing_game'
 require_relative 'definition'
+require_relative 'features'
 
 class ResponseBuilder
   include Definition
+  include Features
 
   attr_reader :http_header,
               :hello_counter,
@@ -12,7 +14,7 @@ class ResponseBuilder
               :body_raw,
               :game,
               :response_header,
-              :brand_new_parameter_list
+              :parameter_list
 
   def initialize
     @http_header = HttpHeader.new
@@ -20,7 +22,7 @@ class ResponseBuilder
     @body_raw = ""
     @game = GuessingGame.new
     clean_status_code
-    @brand_new_parameter_list = {}
+    @parameter_list = {}
   end
 
   def path_command(request_path)
@@ -37,8 +39,8 @@ class ResponseBuilder
 
   def build_response(request_path)
     command = path_command(request_path)
-    brand_new_parameter_parser("GET", path_parameters(request_path)) if get?
-    brand_new_parameter_parser("POST", @post_data) if post?
+    parameter_parser("GET", path_parameters(request_path)) if get?
+    parameter_parser("POST", @post_data) if post?
     return @status_code = "404" if !is_valid?(command)
     response = self.send(PATH_PROCESSORS[command])
     pre_wrapper(response)
@@ -91,36 +93,11 @@ class ResponseBuilder
     http_header.received("verb") == "POST"
   end
 
-  def diagnostics_report
-    http_header.diagnostics_report
-  end
-
-  def diagnostics_report_raw
-    http_header.diagnostics_report_raw
-  end
-
-  def say_hello
-    @hello_counter += 1
-    "Hello World! (#{hello_counter})"
-  end
-
-  def current_date_time
-    Time.now.strftime("%I:%M%p on %A, %B %e, %Y")
-  end
-
-  def date_time
-    "#{current_date_time}"
-  end
-
-  def shutdown_server
-    "Total Requests: #{all_request_counter}"
-  end
-
-  def brand_new_post_parameter_parser(param_list)
+  def parameter_parser_post(param_list)
     sanitize_post_parameters(param_list) if !param_list.empty?
   end
 
-  def brand_new_get_parameter_parser(param_list)
+  def parameter_parser_get(param_list)
     parameter_list = {}
     splitting(param_list, "&").each do |pair|
       parameter_list[splitting(pair, "=").first] = splitting(pair, "=").last
@@ -128,57 +105,14 @@ class ResponseBuilder
     parameter_list
   end
 
-  def brand_new_parameter_parser(get_post, param_list)
-    @brand_new_parameter_list = brand_new_get_parameter_parser(param_list) if get?
-    @brand_new_parameter_list = brand_new_post_parameter_parser(param_list) if post?
-  end
-
-  def found_in_dictionary?(word)
-    dictionary_content = read("/usr/share/dict/words")
-    dictionary_content.one? {|one_line| one_line == word}
-  end
-
-  def word_search
-    return if post?
-    return "Missing parameter" if brand_new_parameter_list["word"].nil?
-    value = brand_new_parameter_list["word"]
-    return "#{value.upcase} is not a known word" if !found_in_dictionary?(value)
-    return "#{value.upcase} is a known word"
+  def parameter_parser(get_post, param_list)
+    @parameter_list = parameter_parser_get(param_list) if get?
+    @parameter_list = parameter_parser_post(param_list) if post?
   end
 
   def post_content_length
     return nil if !post?
     http_header.received("Content-Length").to_i
-  end
-
-  def start_guessing_game
-    if post? and !game.started
-      @status_code = "301"
-      game.start
-    elsif post? and game.started
-      @status_code = "403"
-    end
-  end
-
-  def evaluate_guess
-    return "Your guess was missing, try again..." if brand_new_parameter_list.nil?
-    @status_code = "302"
-    @new_url = "http://localhost:9292/game"
-    game.guess(brand_new_parameter_list["guess"].to_i)
-  end
-
-  def guessing_game
-    return game.last_guess if get?
-    evaluate_guess if post?
-  end
-
-  def force_error
-    @status_code = "500"
-    begin
-      raise "SystemError"
-      rescue => stack_trace
-    end
-    "#{stack_trace.backtrace.join("\n\t")}"
   end
 
 end
